@@ -22,25 +22,25 @@ const CVGenerator = () => {
 
   const parseMarkdown = (text) => {
     if (!text) return '';
-    
+
     console.log('Original text:', text.substring(0, 500) + '...'); // Debug log
-    
+
     let html = text;
-    
+
     // First, clean up ALL raw markdown symbols completely
     html = html.replace(/^#+\s*/gm, ''); // Remove ALL # symbols from headers
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-[#34D399] font-bold">$1</strong>'); // Convert **text** to bold
     html = html.replace(/\*(.+?)\*/g, '<em class="text-[#6EE7B7]">$1</em>'); // Convert *text* to italic
-    
+
     // Parse tables with improved detection - handle various table formats
     html = html.replace(/(?:^|\n)([^\n]*\|[^\n]*\|[\s\S]*?)(?=\n\n|\n[A-Z]|\n\*|\n-|\n#|$)/gm, (match) => {
       const lines = match.trim().split('\n').filter(line => line.trim());
       if (lines.length < 1) return match;
-      
+
       // Check if any line contains table structure
       const hasTableStructure = lines.some(line => line.includes('|') && line.split('|').length >= 2);
       if (!hasTableStructure) return match;
-      
+
       // Find separator line (if exists)
       let separatorIndex = -1;
       for (let i = 0; i < lines.length; i++) {
@@ -49,7 +49,7 @@ const CVGenerator = () => {
           break;
         }
       }
-      
+
       // Determine header and data rows
       let headerRow, dataRows;
       if (separatorIndex >= 0) {
@@ -68,9 +68,9 @@ const CVGenerator = () => {
           dataRows = lines.filter(line => line.includes('|'));
         }
       }
-      
+
       if (dataRows.length === 0) return match;
-      
+
       // Extract headers
       let headerCells = [];
       if (headerRow) {
@@ -79,13 +79,13 @@ const CVGenerator = () => {
         // Generate generic headers based on column count
         const firstDataRow = dataRows[0];
         const columnCount = firstDataRow.split('|').length;
-        headerCells = Array.from({length: columnCount}, (_, i) => `Column ${i + 1}`);
+        headerCells = Array.from({ length: columnCount }, (_, i) => `Column ${i + 1}`);
       }
-      
+
       if (headerCells.length === 0) return match;
-      
+
       let table = '<div class="overflow-x-auto my-6"><table class="w-full border-collapse border border-[#34D399]/30 rounded-lg overflow-hidden bg-white/5">';
-      
+
       // Add header if we have one
       if (headerRow) {
         table += '<thead><tr class="bg-gradient-to-r from-[#34D399]/20 to-[#6EE7B7]/20">';
@@ -95,15 +95,15 @@ const CVGenerator = () => {
         });
         table += '</tr></thead>';
       }
-      
+
       table += '<tbody>';
-      
+
       dataRows.forEach((row, rowIndex) => {
         const cells = row.split('|').map(c => c.trim()).filter(c => c);
         if (cells.length === 0) return;
-        
+
         table += `<tr class="${rowIndex % 2 === 0 ? 'bg-white/5' : 'bg-white/10'}">`;
-        
+
         // Ensure we don't exceed header count
         const maxCells = Math.min(cells.length, headerCells.length);
         for (let i = 0; i < maxCells; i++) {
@@ -113,52 +113,52 @@ const CVGenerator = () => {
           cellContent = cellContent.replace(/\*(.+?)\*/g, '<em class="text-[#6EE7B7]">$1</em>');
           table += `<td class="border border-[#34D399]/20 px-4 py-3 text-white/90">${cellContent}</td>`;
         }
-        
+
         // Fill remaining cells if needed
         for (let i = maxCells; i < headerCells.length; i++) {
           table += `<td class="border border-[#34D399]/20 px-4 py-3 text-white/90"></td>`;
         }
-        
+
         table += '</tr>';
       });
-      
+
       table += '</tbody></table></div>';
       return table;
     });
-    
+
     // Additional table detection - catch any remaining table-like structures
     html = html.replace(/(?:^|\n)([^\n]*\|[^\n]*\|[\s\S]*?)(?=\n\n|\n[A-Z]|\n\*|\n-|\n#|$)/gm, (match) => {
       // Skip if already processed as table
       if (match.includes('<table')) return match;
-      
+
       const lines = match.trim().split('\n').filter(line => line.trim());
       if (lines.length < 1) return match;
-      
+
       // Check if this looks like a table (has multiple lines with |)
       const tableLines = lines.filter(line => line.includes('|') && line.split('|').length >= 2);
       if (tableLines.length < 2) return match;
-      
+
       // Simple table without separator - treat first line as header
       const headerCells = tableLines[0].split('|').map(c => c.trim()).filter(c => c);
       const dataRows = tableLines.slice(1);
-      
+
       if (headerCells.length === 0 || dataRows.length === 0) return match;
-      
+
       let table = '<div class="overflow-x-auto my-6"><table class="w-full border-collapse border border-[#34D399]/30 rounded-lg overflow-hidden bg-white/5">';
       table += '<thead><tr class="bg-gradient-to-r from-[#34D399]/20 to-[#6EE7B7]/20">';
-      
+
       headerCells.forEach(header => {
         const cleanHeader = header.replace(/<strong[^>]*>|<\/strong>|<em[^>]*>|<\/em>/g, '').trim();
         table += `<th class="border border-[#34D399]/30 px-4 py-3 text-left font-bold text-[#34D399]">${cleanHeader}</th>`;
       });
       table += '</tr></thead><tbody>';
-      
+
       dataRows.forEach((row, rowIndex) => {
         const cells = row.split('|').map(c => c.trim()).filter(c => c);
         if (cells.length === 0) return;
-        
+
         table += `<tr class="${rowIndex % 2 === 0 ? 'bg-white/5' : 'bg-white/10'}">`;
-        
+
         const maxCells = Math.min(cells.length, headerCells.length);
         for (let i = 0; i < maxCells; i++) {
           let cellContent = cells[i] || '';
@@ -166,69 +166,69 @@ const CVGenerator = () => {
           cellContent = cellContent.replace(/\*(.+?)\*/g, '<em class="text-[#6EE7B7]">$1</em>');
           table += `<td class="border border-[#34D399]/20 px-4 py-3 text-white/90">${cellContent}</td>`;
         }
-        
+
         for (let i = maxCells; i < headerCells.length; i++) {
           table += `<td class="border border-[#34D399]/20 px-4 py-3 text-white/90"></td>`;
         }
-        
+
         table += '</tr>';
       });
-      
+
       table += '</tbody></table></div>';
       return table;
     });
-    
+
     // Remove ALL remaining table separator lines and | symbols
     html = html.replace(/^\s*\|[\s\-:]+\|[\s\-:]*\|.*$/gm, '');
     html = html.replace(/\|\|/g, ' | '); // Convert || to |
     html = html.replace(/(?<!<[^>]*)\|(?!<[^>]*>)/g, ' | '); // Convert standalone | to | with spaces
-    
+
     console.log('After table processing:', html.substring(0, 500) + '...'); // Debug log
-    
+
     // Parse horizontal rules - remove --- symbols
     html = html.replace(/^---+$/gm, '<hr class="border-0 h-1 bg-gradient-to-r from-transparent via-[#34D399]/50 to-transparent my-8">');
-    
+
     // Parse headers (now that # symbols are removed)
     html = html.replace(/^([A-Z][^:\n]*):?\s*$/gm, (match, title) => {
       if (title.length > 50) return match; // Don't convert long lines to headers
       return `<h2 class="text-3xl font-bold text-white mt-8 mb-4 pb-2 border-b-2 border-[#34D399]/50 bg-gradient-to-r from-[#34D399]/10 to-[#6EE7B7]/10 px-4 py-2 rounded-lg">${title}</h2>`;
     });
-    
+
     // Parse sub-headers (shorter lines that might be sub-headers)
     html = html.replace(/^([A-Z][A-Z\s&]+[A-Z])\s*$/gm, (match, title) => {
       if (title.length > 30) return match;
       return `<h3 class="text-2xl font-bold text-white mt-6 mb-3 text-[#34D399]">${title}</h3>`;
     });
-    
+
     // Parse bullets - remove - and * symbols
     html = html.replace(/^[\*\-]\s+(.+)$/gm, '<li class="text-white/90 mb-2 ml-4 flex items-start"><span class="text-[#34D399] mr-2 mt-1">•</span><span>$1</span></li>');
     html = html.replace(/(<li class="text-white\/90 mb-2 ml-4 flex items-start"><span class="text-[#34D399] mr-2 mt-1">•<\/span><span>.*<\/span><\/li>\n?)+/g, '<ul class="space-y-2 my-4">$&</ul>');
-    
+
     // Parse numbered lists - remove 1. symbols
     html = html.replace(/^\d+\.\s+(.+)$/gm, '<li class="text-white/90 mb-2 ml-4 flex items-start"><span class="text-[#34D399] mr-2 mt-1 font-bold">$&</span><span>$1</span></li>');
     html = html.replace(/(<li class="text-white\/90 mb-2 ml-4 flex items-start"><span class="text-[#34D399] mr-2 mt-1 font-bold">\d+\.\s+.*<\/span><span>.*<\/span><\/li>\n?)+/g, '<ol class="space-y-2 my-4">$&</ol>');
-    
+
     // Parse paragraphs
     html = html.split('\n\n').map(para => {
       para = para.trim();
       if (!para) return '';
       if (para.match(/^<[h|u|o|t|d]/)) return para; // Already processed
       if (para.match(/^\s*\|[\s\-:]+\|/)) return ''; // Skip separator lines
-      
+
       return `<p class="text-white/90 leading-relaxed mb-4 text-lg">${para}</p>`;
     }).join('\n\n');
-    
+
     // Clean up empty paragraphs and extra whitespace
     html = html.replace(/<p class="text-white\/90 leading-relaxed mb-4 text-lg"><\/p>/g, '');
     html = html.replace(/\n{3,}/g, '\n\n');
-    
+
     // Final cleanup - remove ANY remaining raw markdown symbols
     html = html.replace(/^#+\s*/gm, ''); // Remove any remaining #
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-[#34D399] font-bold">$1</strong>'); // Convert any remaining **
     html = html.replace(/\*(.+?)\*/g, '<em class="text-[#6EE7B7]">$1</em>'); // Convert any remaining *
     html = html.replace(/^\s*[\*\-]\s+/gm, ''); // Remove any remaining bullet symbols
     html = html.replace(/^\d+\.\s+/gm, ''); // Remove any remaining numbered list symbols
-    
+
     return html;
   };
 
@@ -266,7 +266,7 @@ const CVGenerator = () => {
 
   const exportWord = () => {
     if (data?.word_file) {
-      window.open(`http://127.0.0.1:5000/api/cv-generator/export/?file=${encodeURIComponent(data.word_file)}`, '_blank');
+      window.open(`http://68.168.218.199:8000/api/cv-generator/export/?file=${encodeURIComponent(data.word_file)}`, '_blank');
     } else {
       alert('No Word file available. Please generate your CV first.');
     }
@@ -298,7 +298,7 @@ const CVGenerator = () => {
                   <span className="text-2xl">📄</span>
                   Upload Your Resume PDF
                 </label>
-                <div 
+                <div
                   className="border-3 border-dashed border-[#34D399] rounded-2xl p-12 text-center bg-gradient-to-br from-[#34D399]/10 to-[#6EE7B7]/10 cursor-pointer transition-all hover:bg-gradient-to-br hover:from-[#34D399]/20 hover:to-[#6EE7B7]/20 hover:scale-105 hover:shadow-xl"
                   onClick={() => document.getElementById('pdfInput').click()}
                 >
@@ -361,11 +361,10 @@ const CVGenerator = () => {
 
             {/* Status Message */}
             {status.message && (
-              <div className={`mt-6 p-6 rounded-2xl text-center font-bold text-lg ${
-                status.type === 'loading' ? 'bg-gradient-to-r from-[#34D399]/20 to-[#6EE7B7]/20 text-[#34D399] border-2 border-[#34D399]/50' :
-                status.type === 'success' ? 'bg-gradient-to-r from-[#059669]/20 to-[#10B981]/20 text-[#6EE7B7] border-2 border-[#059669]/50' :
-                'bg-gradient-to-r from-red-400/20 to-pink-500/20 text-red-200 border-2 border-red-400/50'
-              }`}>
+              <div className={`mt-6 p-6 rounded-2xl text-center font-bold text-lg ${status.type === 'loading' ? 'bg-gradient-to-r from-[#34D399]/20 to-[#6EE7B7]/20 text-[#34D399] border-2 border-[#34D399]/50' :
+                  status.type === 'success' ? 'bg-gradient-to-r from-[#059669]/20 to-[#10B981]/20 text-[#6EE7B7] border-2 border-[#059669]/50' :
+                    'bg-gradient-to-r from-red-400/20 to-pink-500/20 text-red-200 border-2 border-red-400/50'
+                }`}>
                 {status.message}
               </div>
             )}
@@ -378,22 +377,20 @@ const CVGenerator = () => {
               <div className="flex gap-2 border-b-2 border-[#34D399]/20 p-6 bg-gradient-to-r from-[#059669]/10 to-[#34D399]/10">
                 <button
                   onClick={() => setActiveTab('original')}
-                  className={`px-8 py-4 font-bold rounded-xl transition-all flex items-center gap-2 ${
-                    activeTab === 'original' 
-                      ? 'bg-gradient-to-r from-[#059669] to-[#34D399] text-white shadow-lg' 
+                  className={`px-8 py-4 font-bold rounded-xl transition-all flex items-center gap-2 ${activeTab === 'original'
+                      ? 'bg-gradient-to-r from-[#059669] to-[#34D399] text-white shadow-lg'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
+                    }`}
                 >
                   <span className="text-xl">📄</span>
                   Original Text
                 </button>
                 <button
                   onClick={() => setActiveTab('generated')}
-                  className={`px-8 py-4 font-bold rounded-xl transition-all flex items-center gap-2 ${
-                    activeTab === 'generated' 
-                      ? 'bg-gradient-to-r from-[#059669] to-[#34D399] text-white shadow-lg' 
+                  className={`px-8 py-4 font-bold rounded-xl transition-all flex items-center gap-2 ${activeTab === 'generated'
+                      ? 'bg-gradient-to-r from-[#059669] to-[#34D399] text-white shadow-lg'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
+                    }`}
                 >
                   <span className="text-xl">✨</span>
                   AI Generated CV
@@ -421,7 +418,7 @@ const CVGenerator = () => {
                     {data.original || 'No content extracted from PDF'}
                   </div>
                 ) : (
-                  <div 
+                  <div
                     className="prose prose-lg max-w-none text-white prose-headings:text-white prose-strong:text-[#34D399] prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg prose-p:text-white/90 prose-li:text-white/90 prose-td:text-white/90 prose-th:text-[#34D399]"
                     dangerouslySetInnerHTML={{ __html: parseMarkdown(data.generated) }}
                   />
